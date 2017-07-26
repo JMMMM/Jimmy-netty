@@ -1,0 +1,5 @@
+dependencies{
+    // https://mvnrepository.com/artifact/io.netty/netty-all
+    compile group: 'io.netty', name: 'netty-all', version: '5.0.0.Alpha1'
+
+}
