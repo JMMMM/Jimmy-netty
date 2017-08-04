@@ -40,4 +40,5 @@ public class TimeClientHandler extends ChannelHandlerAdapter {
         String body = new String(req, "UTF-8");
         System.out.println("Now is :" + body);
     }
+
 }
