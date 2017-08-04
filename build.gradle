@@ -20,8 +20,8 @@ ext {
 
 dependencies {
     // https://mvnrepository.com/artifact/io.netty/netty-all
-    compile group: 'io.netty', name: 'netty-all', version: '4.1.13.Final'
-
+    compile group: 'io.netty', name: 'netty-all', version: '5.0.0.Alpha1'
+    compile "org.springframework.boot:spring-boot-starter-web:1.5.4.RELEASE"
     compile "org.scala-lang:scala-library:$scalaVersion"
     compile "org.scala-lang:scala-compiler:$scalaVersion"
     compile "org.scala-lang:scala-reflect:$scalaVersion"
