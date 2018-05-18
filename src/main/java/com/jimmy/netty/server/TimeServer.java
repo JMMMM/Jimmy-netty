@@ -9,11 +9,15 @@ import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
 
 import java.net.Socket;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Created by Jimmy on 2017/8/4.
  */
 public class TimeServer {
+    public static Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+
     public void bind(int port) throws InterruptedException {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -26,7 +30,7 @@ public class TimeServer {
                         protected void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new IdleStateHandler(15, 0, 0),
                                     new LineBasedFrameDecoder(1024),
-                                    new TimeServerHandler());
+                                    new TimeServerHandler(executor));
                         }
                     });
             ChannelFuture f = bootstrap.bind(port).sync();
