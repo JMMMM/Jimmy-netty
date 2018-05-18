@@ -4,31 +4,22 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
-
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by Jimmy on 2017/8/4.
  */
 public class TimeClientHandler extends ChannelHandlerAdapter {
-    private static final Logger logger = Logger.getLogger(TimeClientHandler.class.getName());
-
-    private final ByteBuf firstMessage;
-
-    public TimeClientHandler() {
-        byte[] req = "QUERY TIME ORDER\n".getBytes();
-        firstMessage = Unpooled.buffer(req.length);
-        firstMessage.writeBytes(req);
-    }
+    private static final Logger logger = LoggerFactory.getLogger(TimeClientHandler.class);
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
-        ctx.writeAndFlush(firstMessage);
+
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.warning("Unexpected exception from downstream:" + cause.getMessage());
         ctx.close();
     }
 
