@@ -13,18 +13,21 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Created by Jimmy on 2017/8/4.
  */
 public class TimeClient {
     private static ChannelFuture f = null;
-
+    private static AtomicInteger temp = new AtomicInteger(0);
     public void connect(int port, String host) throws Exception {
         EventLoopGroup group = new NioEventLoopGroup();
         try {
             Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(group).channel(NioSocketChannel.class)
                     .option(ChannelOption.TCP_NODELAY, true)
+                    .option(ChannelOption.SO_KEEPALIVE, true)
                     .handler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
