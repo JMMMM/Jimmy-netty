@@ -30,44 +30,44 @@ public class TimeClient {
 
     public Channel connect(int port, String host) throws Exception {
         EventLoopGroup group = new NioEventLoopGroup();
-        try {
-            Bootstrap bootstrap = new Bootstrap();
-            bootstrap.group(group).channel(NioSocketChannel.class)
-                    .option(ChannelOption.TCP_NODELAY, true)
-                    .option(ChannelOption.SO_KEEPALIVE, true)
-                    .handler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new LineBasedFrameDecoder(1024), new TimeClientHandler(msg -> {
-                                int key = msg.slice(0, 4).readInt();
-                                ByteBuf resp = msg.skipBytes(4);
-                                requestQuere.remove(key).complete(resp);
-                            }));
-                        }
-                    });
-            channel = bootstrap.connect(host, port).sync().channel();
-        } finally {
-            group.shutdownGracefully();
-        }
+        Bootstrap bootstrap = new Bootstrap();
+        bootstrap.group(group).channel(NioSocketChannel.class)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        ch.pipeline().addLast(new LineBasedFrameDecoder(1024), new TimeClientHandler(msg -> {
+                            int key = msg.slice(0, 4).readInt();
+                            ByteBuf resp = msg.skipBytes(4);
+                            requestQuere.remove(key).complete(resp);
+                        }));
+                    }
+                });
+        channel = bootstrap.connect(host, port).sync().channel();
         return channel;
     }
 
     public static void main(String[] args) throws Exception {
         int port = 8080;
         Channel channel = new TimeClient().connect(port, "127.0.0.1");
-        executor.execute(() -> {
-            try {
-                send(channel, temp.getAndIncrement());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (TimeoutException e) {
-                e.printStackTrace();
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-        });
+        while (true) {
+            int key = temp.getAndIncrement();
+            new Thread(() -> {
+                try {
+                    send(channel, key);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (TimeoutException e) {
+                    e.printStackTrace();
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+            if (key % 5 == 0) Thread.sleep(5000);
+        }
     }
 
     public static void send(Channel channel, int key) throws InterruptedException, ExecutionException, TimeoutException, UnsupportedEncodingException {
@@ -78,14 +78,14 @@ public class TimeClient {
         byte[] req = new byte[keyByte.length + content.length];
         System.arraycopy(keyByte, 0, req, 0, keyByte.length);
         System.arraycopy(content, 0, req, keyByte.length, content.length);
-        ByteBuf firstMessage = Unpooled.buffer(content.length);
+        ByteBuf firstMessage = Unpooled.buffer(req.length);
         firstMessage.writeBytes(req);
         channel.writeAndFlush(firstMessage);
         ByteBuf resp = future.get(100, TimeUnit.SECONDS);
         byte[] response = new byte[resp.readableBytes()];
         resp.readBytes(response);
         String str = new String(response, "UTF-8");
-        logger.info("Now is :{}",str);
+        logger.info("Now is :{}", str);
     }
 
     private static byte[] int2Byte(int key) {

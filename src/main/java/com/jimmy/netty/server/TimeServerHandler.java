@@ -26,31 +26,34 @@ public class TimeServerHandler extends ChannelHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         executor.execute(() -> {
             try {
-                ctx.writeAndFlush(processRequest(ctx, msg));
+                processRequest(ctx, msg);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
         });
     }
 
     private ByteBuf processRequest(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-        byte[] req = new byte[buf.readableBytes() - 4];
-        int key = buf.slice(0, 4).readInt();
-        buf.skipBytes(4).readBytes(req);
-        String body = new String(req, "UTF-8");
-        logger.info("Server receive msg:{}", body);
-        String currentTime = "QUERY TIME ORDER".equalsIgnoreCase(body) ? System.currentTimeMillis() + "\n" :
-                "BAD ORDER\n";
+        if (buf.readableBytes() - 4 > 0 && msg != null) {
+            byte[] req = new byte[buf.readableBytes() - 4];
+            int key = buf.slice(0, 4).readInt();
+            buf.skipBytes(4).readBytes(req);
+            String body = new String(req, "UTF-8");
+            logger.info("Server receive msg:{}", body);
+            String currentTime = "QUERY TIME ORDER".equalsIgnoreCase(body) ? System.currentTimeMillis() + "\n" :
+                    "BAD ORDER\n";
 
-        byte[] keyByte = int2Byte(key);
-        byte[] content = currentTime.getBytes();
-        byte[] resp = new byte[keyByte.length + content.length];
-        System.arraycopy(keyByte, 0, resp, 0, keyByte.length);
-        System.arraycopy(content, 0, resp, keyByte.length, content.length);
+            byte[] keyByte = int2Byte(key);
+            byte[] content = currentTime.getBytes();
+            byte[] resp = new byte[keyByte.length + content.length];
+            System.arraycopy(keyByte, 0, resp, 0, keyByte.length);
+            System.arraycopy(content, 0, resp, keyByte.length, content.length);
 
-        Thread.sleep(5 * 1000); //假设业务处理要
-        return Unpooled.copiedBuffer(resp);
+            Thread.sleep(5 * 1000); //假设业务处理要
+            ctx.writeAndFlush(resp);
+        }
+        return null;
     }
 
     @Override
