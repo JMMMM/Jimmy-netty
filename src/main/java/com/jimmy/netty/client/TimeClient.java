@@ -81,7 +81,7 @@ public class TimeClient {
         ByteBuf firstMessage = Unpooled.buffer(req.length);
         firstMessage.writeBytes(req);
         channel.writeAndFlush(firstMessage);
-        ByteBuf resp = future.get(100, TimeUnit.SECONDS);
+        ByteBuf resp = future.get(10, TimeUnit.SECONDS);
         byte[] response = new byte[resp.readableBytes()];
         resp.readBytes(response);
         String str = new String(response, "UTF-8");

@@ -51,7 +51,7 @@ public class TimeServerHandler extends ChannelHandlerAdapter {
             System.arraycopy(content, 0, resp, keyByte.length, content.length);
 
             Thread.sleep(5 * 1000); //假设业务处理要
-            ctx.writeAndFlush(resp);
+            ctx.writeAndFlush(Unpooled.copiedBuffer(resp));
         }
         return null;
     }
