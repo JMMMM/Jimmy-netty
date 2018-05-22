@@ -23,9 +23,12 @@ public class TimeClient {
     private static Channel channel = null;
     private static AtomicInteger temp = new AtomicInteger(0);
     private static final Logger logger = LoggerFactory.getLogger(TimeClientHandler.class);
-    private ConcurrentHashMap<Integer, CompletableFuture<ByteBuf>> requestQuere = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer, CompletableFuture<ByteBuf>> requestQuere = new ConcurrentHashMap<>();
 
-    public void connect(int port, String host) throws Exception {
+    public static Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+
+
+    public Channel connect(int port, String host) throws Exception {
         EventLoopGroup group = new NioEventLoopGroup();
         try {
             Bootstrap bootstrap = new Bootstrap();
@@ -43,18 +46,31 @@ public class TimeClient {
                         }
                     });
             channel = bootstrap.connect(host, port).sync().channel();
-            while (true) send(channel, temp.getAndIncrement());
         } finally {
             group.shutdownGracefully();
         }
+        return channel;
     }
 
     public static void main(String[] args) throws Exception {
         int port = 8080;
-        new TimeClient().connect(port, "127.0.0.1");
+        Channel channel = new TimeClient().connect(port, "127.0.0.1");
+        executor.execute(() -> {
+            try {
+                send(channel, temp.getAndIncrement());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (TimeoutException e) {
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
-    private void send(Channel channel, int key) throws InterruptedException, ExecutionException, TimeoutException, UnsupportedEncodingException {
+    public static void send(Channel channel, int key) throws InterruptedException, ExecutionException, TimeoutException, UnsupportedEncodingException {
         CompletableFuture<ByteBuf> future = new CompletableFuture<>();
         requestQuere.put(key, future);
         byte[] keyByte = int2Byte(key);
@@ -72,7 +88,7 @@ public class TimeClient {
         logger.info("Now is :{}",str);
     }
 
-    private byte[] int2Byte(int key) {
+    private static byte[] int2Byte(int key) {
         byte[] intBytes = new byte[4];
         intBytes[0] = (byte) (key >> 24);
         intBytes[1] = (byte) (key >> 16);
